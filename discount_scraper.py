@@ -128,16 +128,16 @@ class IconicScraper(DiscountScraper):
         self.base_url = "https://www.theiconic.com.au"
 
     def scrape(self) -> List[Dict]:
-        """Scrape Iconic for discount items from first 5 pages"""
+        """Scrape Iconic for discount items from first 2 pages"""
         items = []
 
         try:
             # Navigate to men's clothing sale section
-            sale_url = f"{self.base_url}/mens-clothing-sale"
+            sale_url = f"{self.base_url}/mens-clothing-sale/"
             logger.info(f"Scraping {sale_url}")
 
-            # Scrape first 5 pages
-            for page in range(1, 6):
+            # Scrape first 2 pages only
+            for page in range(1, 3):
                 try:
                     page_url = f"{sale_url}?page={page}" if page > 1 else sale_url
                     logger.info(f"Scraping page {page}: {page_url}")
@@ -149,8 +149,8 @@ class IconicScraper(DiscountScraper):
 
                     soup = BeautifulSoup(response.content, 'html.parser')
 
-                    # Find product containers (adjust selector based on actual site structure)
-                    products = soup.find_all('div', class_=['product', 'product-item', 'ProductCard'])
+                    # Find product containers - look for all divs with product info
+                    products = soup.find_all('div', {'class': lambda x: x and 'product' in x.lower()})
 
                     if not products:
                         logger.warning(f"No products found on page {page}")
@@ -158,26 +158,40 @@ class IconicScraper(DiscountScraper):
 
                     for product in products:
                         try:
-                            # Extract product details
-                            name_elem = product.find(['h2', 'h3', 'a'])
-                            price_elem = product.find(class_=['price', 'product-price', 'current-price'])
-                            original_price_elem = product.find(class_=['original-price', 'was-price', 'strikethrough'])
-                            category_elem = product.find(class_=['category', 'breadcrumb'])
+                            # Extract brand and product name
+                            name_elem = product.find(['h2', 'h3', 'a'], {'class': lambda x: x and any(c in str(x).lower() for c in ['name', 'title', 'product'])})
 
-                            if not name_elem or not price_elem:
+                            # Try to find price elements with specific patterns
+                            price_elems = product.find_all(lambda tag: tag.name in ['span', 'div'] and '$' in (tag.get_text(strip=True) or ''))
+
+                            if not name_elem or not price_elems:
                                 continue
 
-                            name = name_elem.get_text(strip=True)
-                            current_price = price_elem.get_text(strip=True)
-                            original_price = original_price_elem.get_text(strip=True) if original_price_elem else "N/A"
-                            category = category_elem.get_text(strip=True) if category_elem else "Men"
+                            name_text = name_elem.get_text(strip=True)
+
+                            # Extract current and original prices from the price elements
+                            prices = [p.get_text(strip=True) for p in price_elems]
+
+                            if len(prices) < 1:
+                                continue
+
+                            # Usually the last price is current, others are original
+                            current_price = prices[-1] if prices else "N/A"
+                            original_price = prices[0] if len(prices) > 1 else "N/A"
+
+                            # Extract category from breadcrumb or sidebar
+                            category = self._extract_category(product)
+
+                            # Extract brand name (usually first part before product name or in separate element)
+                            brand, product_name = self._parse_brand_name(name_text)
 
                             # Calculate discount
                             discount_percent = self._calculate_discount(current_price, original_price)
 
                             items.append({
                                 'source': 'The Iconic',
-                                'name': name,
+                                'brand': brand,
+                                'name': product_name,
                                 'current_price': current_price,
                                 'original_price': original_price,
                                 'discount_percent': discount_percent,
@@ -203,6 +217,24 @@ class IconicScraper(DiscountScraper):
             logger.error(f"Error scraping The Iconic: {e}")
 
         return items
+
+    def _parse_brand_name(self, text: str) -> tuple:
+        """Parse brand and product name from combined text"""
+        parts = text.split(maxsplit=1)
+        if len(parts) == 2:
+            return parts[0], parts[1]
+        return "Unknown", text
+
+    def _extract_category(self, product) -> str:
+        """Extract category from product element"""
+        # Look for category indicators in the product or nearby elements
+        category_keywords = ['jeans', 'shorts', 'pants', 'shirt', 'jacket', 'coat', 'shoes', 'accessories']
+        text = product.get_text(strip=True).lower()
+
+        for keyword in category_keywords:
+            if keyword in text:
+                return keyword
+        return "Men"
 
     def _calculate_discount(self, current: str, original: str) -> float:
         """Calculate discount percentage"""
