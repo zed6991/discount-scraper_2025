@@ -55,7 +55,9 @@ class handler(BaseHTTPRequestHandler):
                 'error': str(e)
             }
 
-        self.wfile.write(json.dumps(response, default=str).encode())
+        # Format response with nice indentation
+        formatted_response = json.dumps(response, default=str, indent=2)
+        self.wfile.write(formatted_response.encode())
 
     def do_OPTIONS(self):
         """Handle OPTIONS requests"""

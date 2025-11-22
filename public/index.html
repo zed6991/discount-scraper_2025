@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discount Scraper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .product-name {
+            font-weight: 500;
+            color: #333;
+            max-width: 300px;
+        }
+
+        .source-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .source-david-jones {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .source-iconic {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .discount-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: #4caf50;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .discount-high {
+            background: #4caf50;
+        }
+
+        .discount-medium {
+            background: #ff9800;
+        }
+
+        .discount-low {
+            background: #f44336;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .price {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .product-name {
+                max-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Discount Scraper</h1>
+
+        <div class="controls">
+            <button onclick="loadDiscounts()">🔄 Load Discounts</button>
+            <button onclick="sortByDiscount()">↓ Highest Discount</button>
+            <button onclick="sortByPrice()">↓ Lowest Price</button>
+        </div>
+
+        <div id="stats" class="stats"></div>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        let allItems = [];
+
+        async function loadDiscounts() {
+            const content = document.getElementById('content');
+            content.innerHTML = '<div class="loading">Loading discounts... ⏳</div>';
+
+            try {
+                const response = await fetch('/api/scrape');
+                const data = await response.json();
+
+                if (data.success) {
+                    allItems = data.items;
+                    displayDiscounts(allItems);
+                    updateStats(data);
+                } else {
+                    content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                content.innerHTML = `<div class="error">Failed to load discounts: ${error.message}</div>`;
+            }
+        }
+
+        function displayDiscounts(items) {
+            const content = document.getElementById('content');
+
+            if (!items || items.length === 0) {
+                content.innerHTML = '<div class="empty">No discounts found</div>';
+                return;
+            }
+
+            let html = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Source</th>
+                                <th>Discount</th>
+                                <th>Current Price</th>
+                                <th>Original Price</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            items.forEach(item => {
+                const discountClass = item.discount_percent > 30 ? 'discount-high' : item.discount_percent > 15 ? 'discount-medium' : 'discount-low';
+                const sourceBadgeClass = item.source === 'David Jones' ? 'source-david-jones' : 'source-iconic';
+
+                html += `
+                    <tr>
+                        <td>
+                            <div class="product-name">
+                                ${item.url ? `<a href="${item.url}" target="_blank">${item.name}</a>` : item.name}
+                            </div>
+                        </td>
+                        <td><span class="source-badge ${sourceBadgeClass}">${item.source}</span></td>
+                        <td><span class="discount-badge ${discountClass}">${item.discount_percent}%</span></td>
+                        <td><span class="price">${item.current_price}</span></td>
+                        <td><span class="original-price">${item.original_price}</span></td>
+                        <td>${item.category}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            content.innerHTML = html;
+        }
+
+        function updateStats(data) {
+            const stats = document.getElementById('stats');
+            const avgDiscount = allItems.length > 0
+                ? (allItems.reduce((sum, item) => sum + item.discount_percent, 0) / allItems.length).toFixed(1)
+                : 0;
+
+            stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${data.total}</div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgDiscount}%</div>
+                    <div class="stat-label">Avg Discount</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${new Date(data.timestamp).toLocaleTimeString()}</div>
+                    <div class="stat-label">Last Updated</div>
+                </div>
+            `;
+        }
+
+        function sortByDiscount() {
+            allItems.sort((a, b) => b.discount_percent - a.discount_percent);
+            displayDiscounts(allItems);
+        }
+
+        function sortByPrice() {
+            allItems.sort((a, b) => {
+                const priceA = parseFloat(a.current_price.replace(/[^0-9.]/g, ''));
+                const priceB = parseFloat(b.current_price.replace(/[^0-9.]/g, ''));
+                return priceA - priceB;
+            });
+            displayDiscounts(allItems);
+        }
+
+        // Load discounts on page load
+        window.addEventListener('load', loadDiscounts);
+    </script>
+</body>
+</html>
