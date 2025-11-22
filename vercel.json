@@ -1,11 +1,5 @@
-{
-  "buildCommand": "pip install -r requirements.txt",
-  "env": {
-    "PYTHONUNBUFFERED": "1"
-  },
-  "functions": {
-    "api/scrape.py": {
-      "runtime": "python@3.9"
-    }
+"functions": {
+  "api/scrape.py": {
+    "runtime": "@vercel/python@0.7.0"
   }
 }
