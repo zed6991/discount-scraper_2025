@@ -1,0 +1,11 @@
+{
+  "buildCommand": "pip install -r requirements.txt",
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "functions": {
+    "api/scrape.py": {
+      "runtime": "python3.9"
+    }
+  }
+}
