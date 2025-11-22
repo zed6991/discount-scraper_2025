@@ -77,6 +77,7 @@ class DavidJonesScraper(DiscountScraper):
 
                     items.append({
                         'source': 'David Jones',
+                        'brand': 'Unknown',
                         'name': name,
                         'current_price': current_price,
                         'original_price': original_price,
@@ -126,21 +127,41 @@ class IconicScraper(DiscountScraper):
     def __init__(self):
         super().__init__()
         self.base_url = "https://www.theiconic.com.au"
+        # Clothing categories to scrape
+        self.categories = {
+            'Shirts & Polos': 'mens-clothing-shirts-polos-sale/',
+            'T-Shirts & Singlets': 'mens-clothing-t-shirts-singlets-sale/',
+            'Coats & Jackets': 'mens-clothing-coats-jackets-sale/',
+            'Pants': 'mens-clothing-pants-sale/',
+            'Sweats & Hoodies': 'mens-clothing-sweats-hoodies-sale/',
+            'Jumpers & Cardigans': 'mens-clothing-jumpers-cardigans-sale/',
+            'Jeans': 'mens-clothing-jeans-sale/',
+            'Shorts': 'mens-clothing-shorts-sale/',
+            'Suits & Blazers': 'mens-clothing-suits-blazers-sale/',
+            'Swimwear': 'mens-clothing-swimwear-sale/',
+            'Loungewear': 'mens-clothing-loungewear-sale/',
+            'Underwear': 'mens-clothing-underwear-sale/',
+            'Socks': 'mens-clothing-socks-sale/',
+            'Sleepwear': 'mens-clothing-sleepwear-sale/',
+            'Base Layers': 'mens-clothing-base-layers-sale/',
+            'Underwear & Socks': 'mens-clothing-underwear-socks-sale/',
+            'Socks & Stockings': 'mens-clothing-socks-stockings-sale/',
+        }
 
     def scrape(self) -> List[Dict]:
-        """Scrape Iconic for discount items from first 2 pages"""
+        """Scrape Iconic for discount items from all clothing categories"""
         items = []
 
         try:
-            # Navigate to men's clothing sale section
-            sale_url = f"{self.base_url}/mens-clothing-sale/"
-            logger.info(f"Scraping {sale_url}")
-
-            # Scrape first 2 pages only
-            for page in range(1, 3):
+            # Scrape each category
+            for category_name, category_path in self.categories.items():
                 try:
-                    page_url = f"{sale_url}?page={page}" if page > 1 else sale_url
-                    logger.info(f"Scraping page {page}: {page_url}")
+                    sale_url = f"{self.base_url}/{category_path}"
+                    logger.info(f"Scraping {category_name}: {sale_url}")
+
+                    # Scrape first page of each category only
+                    page_url = sale_url
+                    logger.info(f"Scraping {category_name}: {page_url}")
 
                     # Add referer header
                     headers = {'Referer': self.base_url}
@@ -157,8 +178,8 @@ class IconicScraper(DiscountScraper):
                         product_divs = soup.find_all('div', class_=lambda x: x and ('col' in str(x).lower() or 'item' in str(x).lower()))
 
                     if not product_divs:
-                        logger.warning(f"No products found on page {page}")
-                        break
+                        logger.warning(f"No products found for {category_name}")
+                        continue
 
                     for product_div in product_divs:
                         try:
@@ -193,12 +214,6 @@ class IconicScraper(DiscountScraper):
                             if current_price == "N/A":
                                 continue
 
-                            # Get product text for category extraction
-                            product_text = product_div.get_text(strip=True).lower()
-
-                            # Extract category
-                            category = self._extract_category_from_text(product_text)
-
                             # Calculate discount
                             discount_percent = self._calculate_discount(current_price, original_price)
 
@@ -209,7 +224,7 @@ class IconicScraper(DiscountScraper):
                                 'current_price': current_price,
                                 'original_price': original_price,
                                 'discount_percent': discount_percent,
-                                'category': category,
+                                'category': category_name,
                                 'gender': 'Men',
                                 'url': self._extract_url(product_div),
                                 'scraped_at': datetime.now().isoformat()
@@ -219,11 +234,11 @@ class IconicScraper(DiscountScraper):
                             logger.warning(f"Error parsing product: {e}")
                             continue
 
-                    time.sleep(1)  # Be respectful to servers between pages
+                    time.sleep(1)  # Be respectful to servers between categories
 
                 except Exception as e:
-                    logger.error(f"Error scraping page {page}: {e}")
-                    break
+                    logger.error(f"Error scraping category {category_name}: {e}")
+                    continue
 
             logger.info(f"Found {len(items)} items from The Iconic")
 
@@ -232,33 +247,6 @@ class IconicScraper(DiscountScraper):
 
         return items
 
-    def _parse_brand_name(self, text: str) -> tuple:
-        """Parse brand and product name from combined text"""
-        parts = text.split(maxsplit=1)
-        if len(parts) == 2:
-            return parts[0], parts[1]
-        return "Unknown", text
-
-    def _extract_category(self, product) -> str:
-        """Extract category from product element"""
-        # Look for category indicators in the product or nearby elements
-        category_keywords = ['jeans', 'shorts', 'pants', 'shirt', 'jacket', 'coat', 'shoes', 'accessories']
-        text = product.get_text(strip=True).lower()
-
-        for keyword in category_keywords:
-            if keyword in text:
-                return keyword
-        return "Men"
-
-    def _extract_category_from_text(self, text: str) -> str:
-        """Extract category from product text"""
-        category_keywords = ['jeans', 'shorts', 'pants', 'shirt', 'jacket', 'coat', 'shoes', 'accessories', 'sweats', 'hoodie', 'underwear', 'socks']
-        text_lower = text.lower()
-
-        for keyword in category_keywords:
-            if keyword in text_lower:
-                return keyword
-        return "Men"
 
     def _calculate_discount(self, current: str, original: str) -> float:
         """Calculate discount percentage"""

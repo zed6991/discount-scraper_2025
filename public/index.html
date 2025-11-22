@@ -189,6 +189,21 @@
             color: #999;
         }
 
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #1976d2;
+            line-height: 1.6;
+        }
+
+        .info-box a {
+            color: #1976d2;
+            font-weight: 600;
+        }
+
         a {
             color: #667eea;
             text-decoration: none;
@@ -278,6 +293,7 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>Brand</th>
                                 <th>Product</th>
                                 <th>Source</th>
                                 <th>Discount</th>
@@ -295,6 +311,7 @@
 
                 html += `
                     <tr>
+                        <td>${item.brand || 'N/A'}</td>
                         <td>
                             <div class="product-name">
                                 ${item.url ? `<a href="${item.url}" target="_blank">${item.name}</a>` : item.name}
