@@ -19,7 +19,13 @@ class DiscountScraper:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
         })
 
     def scrape(self) -> List[Dict]:
@@ -136,7 +142,9 @@ class IconicScraper(DiscountScraper):
                     page_url = f"{sale_url}?page={page}" if page > 1 else sale_url
                     logger.info(f"Scraping page {page}: {page_url}")
 
-                    response = self.session.get(page_url, timeout=10)
+                    # Add referer header
+                    headers = {'Referer': self.base_url}
+                    response = self.session.get(page_url, headers=headers, timeout=10)
                     response.raise_for_status()
 
                     soup = BeautifulSoup(response.content, 'html.parser')
