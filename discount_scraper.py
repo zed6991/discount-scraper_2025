@@ -119,64 +119,80 @@ class IconicScraper(DiscountScraper):
 
     def __init__(self):
         super().__init__()
-        self.base_url = "https://www.iconic.com.au"
+        self.base_url = "https://www.theiconic.com.au"
 
     def scrape(self) -> List[Dict]:
-        """Scrape Iconic for discount items"""
+        """Scrape Iconic for discount items from first 5 pages"""
         items = []
 
         try:
-            # Navigate to men's sale section
-            sale_url = f"{self.base_url}/men/sale"
+            # Navigate to men's clothing sale section
+            sale_url = f"{self.base_url}/mens-clothing-sale"
             logger.info(f"Scraping {sale_url}")
 
-            response = self.session.get(sale_url, timeout=10)
-            response.raise_for_status()
-
-            soup = BeautifulSoup(response.content, 'html.parser')
-
-            # Find product containers (adjust selector based on actual site structure)
-            products = soup.find_all('div', class_=['product', 'product-item', 'ProductCard'])
-
-            for product in products[:50]:  # Limit to first 50 products
+            # Scrape first 5 pages
+            for page in range(1, 6):
                 try:
-                    # Extract product details
-                    name_elem = product.find(['h2', 'h3', 'a'])
-                    price_elem = product.find(class_=['price', 'product-price', 'current-price'])
-                    original_price_elem = product.find(class_=['original-price', 'was-price', 'strikethrough'])
-                    category_elem = product.find(class_=['category', 'breadcrumb'])
+                    page_url = f"{sale_url}?page={page}" if page > 1 else sale_url
+                    logger.info(f"Scraping page {page}: {page_url}")
 
-                    if not name_elem or not price_elem:
-                        continue
+                    response = self.session.get(page_url, timeout=10)
+                    response.raise_for_status()
 
-                    name = name_elem.get_text(strip=True)
-                    current_price = price_elem.get_text(strip=True)
-                    original_price = original_price_elem.get_text(strip=True) if original_price_elem else "N/A"
-                    category = category_elem.get_text(strip=True) if category_elem else "Men"
+                    soup = BeautifulSoup(response.content, 'html.parser')
 
-                    # Calculate discount
-                    discount_percent = self._calculate_discount(current_price, original_price)
+                    # Find product containers (adjust selector based on actual site structure)
+                    products = soup.find_all('div', class_=['product', 'product-item', 'ProductCard'])
 
-                    items.append({
-                        'source': 'Iconic',
-                        'name': name,
-                        'current_price': current_price,
-                        'original_price': original_price,
-                        'discount_percent': discount_percent,
-                        'category': category,
-                        'gender': 'Men',
-                        'url': self._extract_url(product),
-                        'scraped_at': datetime.now().isoformat()
-                    })
+                    if not products:
+                        logger.warning(f"No products found on page {page}")
+                        break
+
+                    for product in products:
+                        try:
+                            # Extract product details
+                            name_elem = product.find(['h2', 'h3', 'a'])
+                            price_elem = product.find(class_=['price', 'product-price', 'current-price'])
+                            original_price_elem = product.find(class_=['original-price', 'was-price', 'strikethrough'])
+                            category_elem = product.find(class_=['category', 'breadcrumb'])
+
+                            if not name_elem or not price_elem:
+                                continue
+
+                            name = name_elem.get_text(strip=True)
+                            current_price = price_elem.get_text(strip=True)
+                            original_price = original_price_elem.get_text(strip=True) if original_price_elem else "N/A"
+                            category = category_elem.get_text(strip=True) if category_elem else "Men"
+
+                            # Calculate discount
+                            discount_percent = self._calculate_discount(current_price, original_price)
+
+                            items.append({
+                                'source': 'The Iconic',
+                                'name': name,
+                                'current_price': current_price,
+                                'original_price': original_price,
+                                'discount_percent': discount_percent,
+                                'category': category,
+                                'gender': 'Men',
+                                'url': self._extract_url(product),
+                                'scraped_at': datetime.now().isoformat()
+                            })
+
+                        except Exception as e:
+                            logger.warning(f"Error parsing product: {e}")
+                            continue
+
+                    time.sleep(1)  # Be respectful to servers between pages
 
                 except Exception as e:
-                    logger.warning(f"Error parsing product: {e}")
-                    continue
+                    logger.error(f"Error scraping page {page}: {e}")
+                    break
 
-            logger.info(f"Found {len(items)} items from Iconic")
+            logger.info(f"Found {len(items)} items from The Iconic")
 
         except Exception as e:
-            logger.error(f"Error scraping Iconic: {e}")
+            logger.error(f"Error scraping The Iconic: {e}")
 
         return items
 
