@@ -1,13 +1,6 @@
 """
 Vercel Serverless Function - Discount Scraper
 """
-import sys
-import os
-import traceback
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from discount_scraper import DiscountAggregator
 from datetime import datetime
 import json
 
@@ -28,10 +21,15 @@ def handler(request):
         }
 
     try:
-        print('Starting scrape...', flush=True)
-        print(f'Python path: {sys.path}', flush=True)
-        print(f'Current directory: {os.getcwd()}', flush=True)
-        print(f'Files in current dir: {os.listdir(".")}', flush=True)
+        print('Handling request...', flush=True)
+
+        # Lazy-load the scraper only when needed
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from discount_scraper import DiscountAggregator
+
+        print('DiscountAggregator imported', flush=True)
 
         aggregator = DiscountAggregator()
         print('DiscountAggregator created', flush=True)
@@ -51,6 +49,7 @@ def handler(request):
         }
 
     except Exception as e:
+        import traceback
         error_msg = f'Error during scraping: {str(e)}\n{traceback.format_exc()}'
         print(error_msg, flush=True)
         return {
@@ -58,7 +57,6 @@ def handler(request):
             'headers': headers,
             'body': json.dumps({
                 'success': False,
-                'error': str(e),
-                'traceback': traceback.format_exc()
+                'error': str(e)
             })
         }
