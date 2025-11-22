@@ -162,48 +162,39 @@ class IconicScraper(DiscountScraper):
 
                     for product_div in product_divs:
                         try:
-                            # Find all text within the product div
-                            product_text = product_div.get_text(strip=True)
-
-                            # Skip if no prices found
-                            if '$' not in product_text:
-                                continue
-
-                            # Extract brand (first line/heading)
-                            brand_elem = product_div.find(['h2', 'h3', 'h4', 'a'])
+                            # Extract brand using class="brand"
+                            brand_elem = product_div.find('span', class_='brand')
                             if not brand_elem:
                                 continue
-
                             brand_name = brand_elem.get_text(strip=True)
 
-                            # Find next text element that contains the product description
-                            all_text_elems = product_div.find_all(['a', 'h2', 'h3', 'h4', 'span', 'div'])
-                            product_name = "N/A"
+                            # Extract product name using class="name"
+                            name_elem = product_div.find('span', class_='name')
+                            if not name_elem:
+                                continue
+                            product_name = name_elem.get_text(strip=True)
 
-                            # Look for the second text element (usually the product name)
-                            for i, elem in enumerate(all_text_elems):
-                                elem_text = elem.get_text(strip=True)
-                                if elem_text and elem_text != brand_name and '$' not in elem_text and len(elem_text) > 5:
-                                    product_name = elem_text
-                                    break
+                            # Extract original price using class="price original"
+                            original_price_elem = product_div.find('span', class_='price original')
+                            original_price = "N/A"
+                            if original_price_elem:
+                                # Get text content and extract price
+                                price_text = original_price_elem.get_text(strip=True)
+                                # Extract just the price number
+                                original_price = price_text if '$' in price_text else "N/A"
 
-                            # Extract prices - find all elements containing $
-                            price_pattern = r'\$[\d,.]+'
-                            prices = []
-                            for elem in product_div.find_all(['span', 'div']):
-                                text = elem.get_text(strip=True)
-                                if '$' in text and any(c.isdigit() for c in text):
-                                    prices.append(text)
+                            # Extract current/final price using class="price final"
+                            current_price_elem = product_div.find('span', class_='price final')
+                            if not current_price_elem:
+                                continue
+                            current_price_text = current_price_elem.get_text(strip=True)
+                            current_price = current_price_text if '$' in current_price_text else "N/A"
 
-                            # Remove duplicates while preserving order
-                            prices = list(dict.fromkeys(prices))
-
-                            if len(prices) < 1:
+                            if current_price == "N/A":
                                 continue
 
-                            # Usually original price is first, current is last
-                            original_price = prices[0] if len(prices) > 1 else "N/A"
-                            current_price = prices[-1]
+                            # Get product text for category extraction
+                            product_text = product_div.get_text(strip=True).lower()
 
                             # Extract category
                             category = self._extract_category_from_text(product_text)
@@ -211,20 +202,18 @@ class IconicScraper(DiscountScraper):
                             # Calculate discount
                             discount_percent = self._calculate_discount(current_price, original_price)
 
-                            # Only add if we have valid data
-                            if current_price != "N/A" and product_name != "N/A":
-                                items.append({
-                                    'source': 'The Iconic',
-                                    'brand': brand_name,
-                                    'name': product_name,
-                                    'current_price': current_price,
-                                    'original_price': original_price,
-                                    'discount_percent': discount_percent,
-                                    'category': category,
-                                    'gender': 'Men',
-                                    'url': self._extract_url(product_div),
-                                    'scraped_at': datetime.now().isoformat()
-                                })
+                            items.append({
+                                'source': 'The Iconic',
+                                'brand': brand_name,
+                                'name': product_name,
+                                'current_price': current_price,
+                                'original_price': original_price,
+                                'discount_percent': discount_percent,
+                                'category': category,
+                                'gender': 'Men',
+                                'url': self._extract_url(product_div),
+                                'scraped_at': datetime.now().isoformat()
+                            })
 
                         except Exception as e:
                             logger.warning(f"Error parsing product: {e}")
