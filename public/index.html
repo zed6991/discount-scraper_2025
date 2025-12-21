@@ -321,6 +321,18 @@
         <div class="filters" id="filters" style="display: none;">
             <div class="filter-grid">
                 <div class="filter-group">
+                    <label for="brandTierFilter">Brand Tier</label>
+                    <select id="brandTierFilter" onchange="applyFilters()">
+                        <option value="">All Tiers</option>
+                        <option value="Luxury">Luxury</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Upper Mid-Range">Upper Mid-Range</option>
+                        <option value="Mid-Range">Mid-Range</option>
+                        <option value="Budget">Budget</option>
+                        <option value="Niche">Niche</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label for="brandFilter">Brand</label>
                     <select id="brandFilter" onchange="applyFilters()">
                         <option value="">All Brands</option>
@@ -364,6 +376,100 @@
     <script>
         let allItems = [];
         let filteredItems = [];
+
+        // Brand tier mapping
+        const brandTiers = {
+            '2XU': 'Premium',
+            'Academy Brand': 'Upper Mid-Range',
+            'adidas Originals': 'Upper Mid-Range',
+            'adidas Sportswear': 'Mid-Range',
+            'AERE': 'Niche',
+            'ALDO': 'Niche',
+            'Americain': 'Budget',
+            'Andersson Bell': 'Luxury',
+            'Aqua Blu Australia': 'Mid-Range',
+            'Arvust': 'Budget',
+            'Bamboozld': 'Budget',
+            'Barbour': 'Premium',
+            'Barney Cools': 'Mid-Range',
+            'Ben Sherman': 'Upper Mid-Range',
+            'Black Noise White Rain': 'Budget',
+            'Boody': 'Budget',
+            'Brand': 'Niche',
+            'Brooksfield': 'Mid-Range',
+            'Calibre': 'Upper Mid-Range',
+            'Calvin Klein': 'Premium',
+            'Calvin Klein Jeans': 'Upper Mid-Range',
+            'Camilla': 'Luxury',
+            'Canterbury': 'Mid-Range',
+            'Carhartt WIP': 'Premium',
+            'Coast Clothing': 'Budget',
+            'Cotton On': 'Budget',
+            'Country Road': 'Upper Mid-Range',
+            'Deus Ex Machina': 'Upper Mid-Range',
+            'Dickies': 'Upper Mid-Range',
+            'Emporio Armani': 'Premium',
+            'Emporio Armani EA7': 'Premium',
+            'G-Star': 'Upper Mid-Range',
+            'Gant': 'Premium',
+            'Goatlane': 'Budget',
+            'Gramicci': 'Upper Mid-Range',
+            'GUESS Originals': 'Upper Mid-Range',
+            'HUGO': 'Premium',
+            'Jack & Jones': 'Mid-Range',
+            'Jacquemus': 'Luxury',
+            'Johnny Bigg': 'Budget',
+            'Kathmandu': 'Mid-Range',
+            'Kelly Country': 'Budget',
+            'Lacoste': 'Premium',
+            'Lee': 'Upper Mid-Range',
+            'Les Deux': 'Premium',
+            "Levi's": 'Upper Mid-Range',
+            'Love Notes': 'Mid-Range',
+            'Marcs': 'Mid-Range',
+            'Mitch Dowd': 'Budget',
+            'NAUTICA': 'Mid-Range',
+            'Nena & Pasadena': 'Mid-Range',
+            'Neuw': 'Upper Mid-Range',
+            'Nike': 'Mid-Range',
+            'Nomadic Paradise': 'Mid-Range',
+            'Nudie Jeans': 'Premium',
+            'Oxford': 'Upper Mid-Range',
+            'Patagonia': 'Premium',
+            'Polo Ralph Lauren': 'Premium',
+            'Puma': 'Mid-Range',
+            'R.M.Williams': 'Premium',
+            'Riders by Lee': 'Mid-Range',
+            "Rolla's": 'Upper Mid-Range',
+            'S Double': 'Budget',
+            'Salomon': 'Upper Mid-Range',
+            'Sandro': 'Luxury',
+            'Sant And Abel': 'Mid-Range',
+            'Silent Theory': 'Mid-Range',
+            'Speedo': 'Mid-Range',
+            'Sportscraft': 'Upper Mid-Range',
+            'Staple Superior': 'Budget',
+            'Superdry': 'Mid-Range',
+            'Surrounded By Ghosts': 'Budget',
+            'Tarocash': 'Budget',
+            'The North Face': 'Premium',
+            'Thrills': 'Upper Mid-Range',
+            'Tommy Hilfiger': 'Premium',
+            'TravisMathew': 'Upper Mid-Range',
+            'Under Armour': 'Mid-Range',
+            'UNISON': 'Budget',
+            'UNIT': 'Budget',
+            'Volcom': 'Mid-Range',
+            'Walker Golf Things': 'Mid-Range',
+            'Wayver': 'Budget',
+            'Worship': 'Budget',
+            'Wrangler': 'Mid-Range',
+            'yd.': 'Budget'
+        };
+
+        function getBrandTier(brand) {
+            return brandTiers[brand] || 'Unknown';
+        }
 
         async function loadDiscounts() {
             const content = document.getElementById('content');
@@ -417,6 +523,7 @@
         }
 
         function applyFilters() {
+            const brandTierFilter = document.getElementById('brandTierFilter').value;
             const brandFilter = document.getElementById('brandFilter').value;
             const sourceFilter = document.getElementById('sourceFilter').value;
             const categoryFilter = document.getElementById('categoryFilter').value;
@@ -427,9 +534,11 @@
 
             filteredItems = allItems.filter(item => {
                 const itemBrand = item.brand || 'N/A';
+                const itemBrandTier = getBrandTier(itemBrand);
                 const itemPrice = parseFloat(item.current_price.replace(/[^0-9.]/g, ''));
 
                 return (
+                    (brandTierFilter === '' || itemBrandTier === brandTierFilter) &&
                     (brandFilter === '' || itemBrand === brandFilter) &&
                     (sourceFilter === '' || item.source === sourceFilter) &&
                     (categoryFilter === '' || item.category === categoryFilter) &&
@@ -443,6 +552,7 @@
         }
 
         function clearFilters() {
+            document.getElementById('brandTierFilter').value = '';
             document.getElementById('brandFilter').value = '';
             document.getElementById('sourceFilter').value = '';
             document.getElementById('categoryFilter').value = '';
