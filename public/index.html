@@ -177,9 +177,13 @@
         }
 
         .range-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
             gap: 8px;
+        }
+
+        .range-inputs input {
+            flex: 1;
+            min-width: 0;
         }
 
         .filter-actions {
