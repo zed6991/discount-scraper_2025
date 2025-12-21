@@ -134,6 +134,65 @@
             max-width: 300px;
         }
 
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            background: white;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .range-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .filter-actions button {
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
         .source-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -254,11 +313,53 @@
         </div>
 
         <div id="stats" class="stats"></div>
+
+        <div class="filters" id="filters" style="display: none;">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="brandFilter">Brand</label>
+                    <select id="brandFilter" onchange="applyFilters()">
+                        <option value="">All Brands</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="sourceFilter">Source</label>
+                    <select id="sourceFilter" onchange="applyFilters()">
+                        <option value="">All Sources</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="categoryFilter">Category</label>
+                    <select id="categoryFilter" onchange="applyFilters()">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Discount %</label>
+                    <div class="range-inputs">
+                        <input type="number" id="discountMin" placeholder="Min %" onchange="applyFilters()">
+                        <input type="number" id="discountMax" placeholder="Max %" onchange="applyFilters()">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Current Price ($)</label>
+                    <div class="range-inputs">
+                        <input type="number" id="priceMin" placeholder="Min $" onchange="applyFilters()">
+                        <input type="number" id="priceMax" placeholder="Max $" onchange="applyFilters()">
+                    </div>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button onclick="clearFilters()">Clear Filters</button>
+            </div>
+        </div>
+
         <div id="content"></div>
     </div>
 
     <script>
         let allItems = [];
+        let filteredItems = [];
 
         async function loadDiscounts() {
             const content = document.getElementById('content');
@@ -270,14 +371,107 @@
 
                 if (data.success) {
                     allItems = data.items;
-                    displayDiscounts(allItems);
+                    filteredItems = allItems;
+                    populateFilters();
+                    displayDiscounts(filteredItems);
                     updateStats(data);
+                    document.getElementById('filters').style.display = 'block';
                 } else {
                     content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
                 }
             } catch (error) {
                 content.innerHTML = `<div class="error">Failed to load discounts: ${error.message}</div>`;
             }
+        }
+
+        function populateFilters() {
+            // Get unique values for each filter
+            const brands = [...new Set(allItems.map(item => item.brand || 'N/A'))].sort();
+            const sources = [...new Set(allItems.map(item => item.source))].sort();
+            const categories = [...new Set(allItems.map(item => item.category))].sort();
+
+            // Populate brand filter
+            const brandFilter = document.getElementById('brandFilter');
+            brandFilter.innerHTML = '<option value="">All Brands</option>';
+            brands.forEach(brand => {
+                brandFilter.innerHTML += `<option value="${brand}">${brand}</option>`;
+            });
+
+            // Populate source filter
+            const sourceFilter = document.getElementById('sourceFilter');
+            sourceFilter.innerHTML = '<option value="">All Sources</option>';
+            sources.forEach(source => {
+                sourceFilter.innerHTML += `<option value="${source}">${source}</option>`;
+            });
+
+            // Populate category filter
+            const categoryFilter = document.getElementById('categoryFilter');
+            categoryFilter.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(category => {
+                categoryFilter.innerHTML += `<option value="${category}">${category}</option>`;
+            });
+        }
+
+        function applyFilters() {
+            const brandFilter = document.getElementById('brandFilter').value;
+            const sourceFilter = document.getElementById('sourceFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const discountMin = parseFloat(document.getElementById('discountMin').value) || 0;
+            const discountMax = parseFloat(document.getElementById('discountMax').value) || 100;
+            const priceMin = parseFloat(document.getElementById('priceMin').value) || 0;
+            const priceMax = parseFloat(document.getElementById('priceMax').value) || Infinity;
+
+            filteredItems = allItems.filter(item => {
+                const itemBrand = item.brand || 'N/A';
+                const itemPrice = parseFloat(item.current_price.replace(/[^0-9.]/g, ''));
+
+                return (
+                    (brandFilter === '' || itemBrand === brandFilter) &&
+                    (sourceFilter === '' || item.source === sourceFilter) &&
+                    (categoryFilter === '' || item.category === categoryFilter) &&
+                    (item.discount_percent >= discountMin && item.discount_percent <= discountMax) &&
+                    (itemPrice >= priceMin && itemPrice <= priceMax)
+                );
+            });
+
+            displayDiscounts(filteredItems);
+            updateFilteredStats();
+        }
+
+        function clearFilters() {
+            document.getElementById('brandFilter').value = '';
+            document.getElementById('sourceFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('discountMin').value = '';
+            document.getElementById('discountMax').value = '';
+            document.getElementById('priceMin').value = '';
+            document.getElementById('priceMax').value = '';
+
+            filteredItems = allItems;
+            displayDiscounts(filteredItems);
+            updateFilteredStats();
+        }
+
+        function updateFilteredStats() {
+            const stats = document.getElementById('stats');
+            const avgDiscount = filteredItems.length > 0
+                ? (filteredItems.reduce((sum, item) => sum + item.discount_percent, 0) / filteredItems.length).toFixed(1)
+                : 0;
+
+            stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${filteredItems.length}</div>
+                    <div class="stat-label">Filtered Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgDiscount}%</div>
+                    <div class="stat-label">Avg Discount</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${allItems.length}</div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+            `;
         }
 
         function displayDiscounts(items) {
@@ -358,17 +552,17 @@
         }
 
         function sortByDiscount() {
-            allItems.sort((a, b) => b.discount_percent - a.discount_percent);
-            displayDiscounts(allItems);
+            filteredItems.sort((a, b) => b.discount_percent - a.discount_percent);
+            displayDiscounts(filteredItems);
         }
 
         function sortByPrice() {
-            allItems.sort((a, b) => {
+            filteredItems.sort((a, b) => {
                 const priceA = parseFloat(a.current_price.replace(/[^0-9.]/g, ''));
                 const priceB = parseFloat(b.current_price.replace(/[^0-9.]/g, ''));
                 return priceA - priceB;
             });
-            displayDiscounts(allItems);
+            displayDiscounts(filteredItems);
         }
 
         // Load discounts on page load
