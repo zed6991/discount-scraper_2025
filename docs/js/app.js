@@ -308,6 +308,7 @@ async function scrapeDeals() {
             updateDropdowns();
             currentPage = 1;
             filterAndDisplay();
+            updateLastUpdatedDisplay();
 
             if (data.cached) {
                 statusEl.textContent = `Loaded ${data.total} items (cached)`;
@@ -648,15 +649,41 @@ function loadCachedData() {
             calculateCategoryAverages(cachedItems);
             updateDropdowns();
             filterAndDisplay();
+            updateLastUpdatedDisplay();
 
             const statusEl = document.getElementById('statusText');
             if (lastScrapedTime) {
-                const date = new Date(lastScrapedTime);
-                statusEl.textContent = `Last updated: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                statusEl.textContent = `Loaded ${cachedItems.length} cached items`;
             }
         }
     } catch (e) {
         console.warn('Could not load from localStorage');
+    }
+}
+
+// Update the Last Updated display in header
+function updateLastUpdatedDisplay() {
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    if (lastScrapedTime && lastUpdatedEl) {
+        const date = new Date(lastScrapedTime);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        let timeAgo;
+        if (diffMins < 1) {
+            timeAgo = 'Just now';
+        } else if (diffMins < 60) {
+            timeAgo = `${diffMins}m ago`;
+        } else if (diffHours < 24) {
+            timeAgo = `${diffHours}h ago`;
+        } else {
+            timeAgo = `${diffDays}d ago`;
+        }
+        lastUpdatedEl.textContent = timeAgo;
+        lastUpdatedEl.title = date.toLocaleString();
     }
 }
 
