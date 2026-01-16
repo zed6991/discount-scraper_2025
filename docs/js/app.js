@@ -1,6 +1,8 @@
 // Discount Finder - Professional UI
-// For production, update to your Vercel URL: https://YOUR_PROJECT_NAME.vercel.app/api/scrape
-const API_URL = 'http://localhost:8080/api/scrape';
+// Auto-detect: use relative URL for production, localhost for dev
+const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:8080/api/scrape'
+    : '/api/scrape';
 
 let cachedItems = [];
 let filteredItems = [];
