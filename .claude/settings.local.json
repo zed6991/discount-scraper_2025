@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix Vercel runtime configuration to use valid version format\n\nChanged runtime from ''python3.9'' to ''python@3.9'' to match Vercel''s\nrequired runtime version specification format.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git reset:*)",
+      "Bash(dir /s /b *.py)",
+      "Bash(python:*)",
+      "Bash(/c/Users/zaeed/AppData/Local/Programs/Python/Python313/python.exe -c:*)",
+      "Bash(where:*)",
+      "Bash(/c/Users/zaeed/AppData/Local/Programs/Python/Python313/python.exe:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(taskkill:*)",
+      "Bash(taskkill /F /FI \"IMAGENAME eq python.exe\" /FI \"WINDOWTITLE eq *8080*\")",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
