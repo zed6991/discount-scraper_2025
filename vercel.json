@@ -1,7 +1,7 @@
 {
   "builds": [
     {
-      "src": "public/index.html",
+      "src": "docs/**",
       "use": "@vercel/static"
     },
     {
@@ -15,8 +15,16 @@
       "dest": "api/scrape.py"
     },
     {
-      "src": "/.*",
-      "dest": "public/index.html"
+      "src": "/css/(.*)",
+      "dest": "docs/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "docs/js/$1"
+    },
+    {
+      "src": "/",
+      "dest": "docs/index.html"
     }
   ]
 }
