@@ -3,30 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discount Deals - David Jones & Iconic</title>
+    <title>Discount Finder - The Iconic, ASOS, Myer, JB Hi-Fi & David Jones</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🛍️ Discount Deals</h1>
-            <p class="status">
-                <span id="statusText">Ready to scrape</span>
-                <span id="scrapeCount" style="margin-left: 10px;"></span>
-            </p>
+            <div class="header-content">
+                <h1>Discount Finder</h1>
+                <p class="subtitle">Find the best deals on men's fashion</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalItems">0</span>
+                    <span class="stat-label">Items</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="avgDiscount">0%</span>
+                    <span class="stat-label">Avg Discount</span>
+                </div>
+            </div>
         </header>
 
         <div class="filters">
-            <div class="filter-group">
-                <label for="source">Store</label>
-                <select id="source">
-                    <option value="all">All Stores</option>
-                    <option value="David Jones">David Jones</option>
-                    <option value="Iconic">Iconic</option>
-                </select>
+            <!-- Search Bar -->
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search brands or products..." autocomplete="off">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
             </div>
 
-            <div class="filter-row">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="source">Store</label>
+                    <select id="source">
+                        <option value="all">All Stores</option>
+                        <option value="The Iconic">The Iconic</option>
+                        <option value="ASOS">ASOS</option>
+                        <option value="Myer">Myer</option>
+                        <option value="JB Hi-Fi">JB Hi-Fi</option>
+                        <option value="David Jones">David Jones</option>
+                    </select>
+                </div>
+
                 <div class="filter-group">
                     <label for="category">Category</label>
                     <select id="category">
@@ -35,28 +60,169 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="minDiscount">Min Discount (%)</label>
-                    <input type="number" id="minDiscount" min="0" max="100" value="0">
+                    <label for="brand">Brand</label>
+                    <select id="brand">
+                        <option value="all">All Brands</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="brandTier">Brand Tier</label>
+                    <select id="brandTier">
+                        <option value="all">All Tiers</option>
+                        <option value="luxury">Luxury</option>
+                        <option value="premium">Premium</option>
+                        <option value="midrange">Mid-Range</option>
+                        <option value="budget">Budget</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="minDiscount">Min Discount</label>
+                    <select id="minDiscount">
+                        <option value="0">Any discount</option>
+                        <option value="20">20%+ off</option>
+                        <option value="30">30%+ off</option>
+                        <option value="40">40%+ off</option>
+                        <option value="50">50%+ off</option>
+                        <option value="60">60%+ off</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Price Range</label>
+                    <div class="price-range-inputs">
+                        <input type="number" id="minPrice" placeholder="Min $" min="0" step="1">
+                        <span class="price-separator">-</span>
+                        <input type="number" id="maxPrice" placeholder="Max $" min="0" step="1">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="sortBy">Sort By</label>
+                    <select id="sortBy">
+                        <option value="score">Best Deal Score</option>
+                        <option value="discount">Highest Discount %</option>
+                        <option value="savings">Highest Discount $</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="button-group">
-                <button class="btn-scrape" id="scrapeBtn" onclick="scrapeDeals()">
-                    🔄 Scrape Now
+            <div class="filter-actions">
+                <button class="btn btn-primary" id="scrapeBtn" onclick="scrapeDeals()">
+                    <span class="btn-text">Refresh Deals</span>
+                    <span class="btn-loader"></span>
                 </button>
-                <button class="btn-reset" onclick="resetFilters()">Reset</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                <label class="favorites-toggle">
+                    <input type="checkbox" id="showFavoritesOnly">
+                    <span class="toggle-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        Favorites Only
+                    </span>
+                </label>
+            </div>
+
+            <!-- Favorite Brands Section -->
+            <div class="favorite-brands-section">
+                <div class="favorite-brands-header">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        Favorite Brands
+                    </h3>
+                </div>
+                <div id="favoriteBrandsList" class="favorite-brands-list">
+                    <span class="no-favorites">No favorite brands yet. Click the heart on any brand to add it.</span>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <span id="statusText">Ready</span>
+                <span id="cacheInfo"></span>
+            </div>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div id="statsDashboard" class="stats-dashboard">
+            <div class="stats-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10"></path>
+                        <path d="M12 20V4"></path>
+                        <path d="M6 20v-6"></path>
+                    </svg>
+                    Deal Insights
+                </h2>
+                <button class="btn btn-sm" onclick="toggleDashboard()">
+                    <span id="dashboardToggleText">Hide</span>
+                </button>
+            </div>
+            <div id="dashboardContent" class="dashboard-content">
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Deals by Category</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Deals by Brand Tier</h3>
+                        <canvas id="tierChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Price Distribution</h3>
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Deal Score Distribution</h3>
+                        <canvas id="scoreChart"></canvas>
+                    </div>
+                </div>
+                <div class="stats-summary">
+                    <div class="summary-card">
+                        <span class="summary-value" id="totalSavings">$0</span>
+                        <span class="summary-label">Total Potential Savings</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value" id="bestDealScore">0</span>
+                        <span class="summary-label">Best Deal Score</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value" id="avgPrice">$0</span>
+                        <span class="summary-label">Avg Sale Price</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value" id="topBrand">-</span>
+                        <span class="summary-label">Top Brand (by deals)</span>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="itemsContainer" class="items-grid">
             <div class="empty-state">
-                <p>Click "Scrape Now" to find deals</p>
+                <div class="empty-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                </div>
+                <h3>No deals loaded</h3>
+                <p>Click "Refresh Deals" to fetch the latest discounts</p>
             </div>
         </div>
 
-        <footer class="footer">
-            <p>📱 Hosted on GitHub - Access from anywhere!</p>
-        </footer>
+        <!-- Pagination -->
+        <div id="pagination" class="pagination" style="display: none;">
+            <button class="btn btn-secondary" id="prevPage" onclick="changePage(-1)">Previous</button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button class="btn btn-secondary" id="nextPage" onclick="changePage(1)">Next</button>
+        </div>
     </div>
 
     <script src="js/app.js"></script>
