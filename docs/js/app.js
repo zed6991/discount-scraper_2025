@@ -227,6 +227,7 @@ function setupEventListeners() {
     document.getElementById('category').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
     document.getElementById('brand').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
     document.getElementById('brandTier').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
+    document.getElementById('gender').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
     document.getElementById('minDiscount').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
     document.getElementById('sortBy').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
     document.getElementById('showFavoritesOnly').addEventListener('change', () => { currentPage = 1; filterAndDisplay(); });
@@ -352,6 +353,7 @@ function filterAndDisplay() {
     const source = document.getElementById('source').value;
     const brand = document.getElementById('brand').value;
     const brandTier = document.getElementById('brandTier').value;
+    const gender = document.getElementById('gender').value;
     const minDiscount = parseFloat(document.getElementById('minDiscount').value) || 0;
     const sortBy = document.getElementById('sortBy').value;
     const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -391,6 +393,10 @@ function filterAndDisplay() {
 
     if (brandTier !== 'all') {
         filtered = filtered.filter(item => getBrandTier(item.brand) === brandTier);
+    }
+
+    if (gender !== 'all') {
+        filtered = filtered.filter(item => item.gender === gender);
     }
 
     if (minDiscount > 0) {
@@ -706,6 +712,7 @@ function resetFilters() {
     document.getElementById('category').value = 'all';
     document.getElementById('brand').value = 'all';
     document.getElementById('brandTier').value = 'all';
+    document.getElementById('gender').value = 'all';
     document.getElementById('minDiscount').value = '0';
     document.getElementById('minPrice').value = '';
     document.getElementById('maxPrice').value = '';
