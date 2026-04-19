@@ -658,10 +658,19 @@ function displayItems(items) {
                 </div>
             </div>
             <div class="item-footer">
+                <div class="sparkline-wrap" data-pid="${item.product_id || ''}"></div>
                 ${item.url && !item.url.endsWith('#') ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener" class="btn-view${dealScore >= 90 ? ' btn-exceptional' : dealScore >= 75 ? ' btn-great' : ''}">${dealScore >= 90 ? '🔥 Hot Deal' : dealScore >= 75 ? 'Great Deal' : 'View Deal'}</a>` : '<button class="btn-view" disabled>No Link</button>'}
             </div>
         </div>
     `}).join('');
+
+    // Attach product_id data attr to each card and fetch sparkline history
+    const cards = document.querySelectorAll('.item-card');
+    cards.forEach((card, i) => {
+        const item = pageItems[i];
+        if (item && item.product_id) card.dataset.productId = item.product_id;
+    });
+    fetchHistoryForPage(pageItems);
 }
 
 // Clear search input
@@ -1334,9 +1343,7 @@ function renderSparklines(items) {
         const history = priceHistoryCache[item.product_id];
         if (!history || history.length < 2) return;
 
-        const card = document.querySelector(`[data-product-id="${item.product_id}"]`);
-        if (!card) return;
-        const container = card.querySelector('.sparkline-wrap');
+        const container = document.querySelector(`.sparkline-wrap[data-pid="${item.product_id}"]`);
         if (!container || container.dataset.rendered) return;
         container.dataset.rendered = '1';
 
@@ -1368,25 +1375,3 @@ function renderSparklines(items) {
     });
 }
 
-// Wrap displayItems to inject sparkline slots then async-fetch history
-const _originalDisplayItems = displayItems;
-function displayItems(items) {
-    _originalDisplayItems(items);
-
-    const pageItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-    const cards = document.querySelectorAll('.item-card');
-
-    cards.forEach((card, i) => {
-        const item = pageItems[i];
-        if (!item || !item.product_id) return;
-        card.dataset.productId = item.product_id;
-        const footer = card.querySelector('.item-footer');
-        if (footer && !footer.querySelector('.sparkline-wrap')) {
-            const wrap = document.createElement('div');
-            wrap.className = 'sparkline-wrap';
-            footer.insertBefore(wrap, footer.firstChild);
-        }
-    });
-
-    fetchHistoryForPage(pageItems);
-}
