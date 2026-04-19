@@ -543,13 +543,14 @@ class AsyncDiscountScraper:
 
         soup = BeautifulSoup(html, 'lxml')
 
-        # David Jones uses ProductCard components with dynamic class names inside <article> elements
-        # Find all product cards by looking for articles with class containing 'ProductCard_root'
-        products = soup.find_all('article', class_=lambda x: x and 'ProductCard_root' in x)
+        # DJ uses CSS modules with hashed class names — match on the suffix after the hash
+        def has_class_suffix(suffix):
+            return lambda x: x and any(c.endswith(suffix) for c in x) if x else False
+
+        products = soup.find_all('article')
 
         for product in products[:60]:
             try:
-                # Find product link
                 link = product.find('a', href=True)
                 if not link:
                     continue
@@ -559,41 +560,37 @@ class AsyncDiscountScraper:
                     continue
                 url = f"{self.davidjones_url}{url}"
 
-                # Find brand (in <p> tag with class containing 'ProductCard_brand')
-                brand_elem = product.find('p', class_=lambda x: x and 'ProductCard_brand' in x)
+                # Brand: <p> with class ending in '__brand'
+                brand_elem = product.find('p', class_=has_class_suffix('__brand'))
                 brand_name = brand_elem.get_text(strip=True) if brand_elem else 'Unknown'
 
-                # Find product name (in <h2> tag with class containing 'ProductCard_name')
-                name_elem = product.find('h2', class_=lambda x: x and 'ProductCard_name' in x)
+                # Name: <h2> with class ending in '__name'
+                name_elem = product.find('h2', class_=has_class_suffix('__name'))
                 product_name = name_elem.get_text(strip=True) if name_elem else ''
-
                 if not product_name:
                     continue
 
-                # Find sale price (class contains 'Price_salePrice')
-                sale_price_elem = product.find(class_=lambda x: x and 'Price_salePrice' in x)
-                # Find original/was price (class contains 'Price_inactivePrice')
-                original_price_elem = product.find(class_=lambda x: x and 'Price_inactivePrice' in x)
+                # Sale price: <span> with class ending in '__salePrice'
+                sale_price_elem = product.find('span', class_=has_class_suffix('__salePrice'))
+                # Original price: <span> with class ending in '__inactivePrice'
+                original_price_elem = product.find('span', class_=has_class_suffix('__inactivePrice'))
 
-                # If no sale price found, try regular price
+                # Fallback: any span with '__price' but not inactive
                 if not sale_price_elem:
-                    sale_price_elem = product.find(class_=lambda x: x and 'Price_price' in x and 'inactive' not in x)
+                    sale_price_elem = product.find('span', class_=lambda x: x and any(
+                        c.endswith('__price') and 'inactive' not in c.lower() for c in x
+                    ) if x else False)
 
                 if not sale_price_elem:
                     continue
 
-                current_price = sale_price_elem.get_text(strip=True)
-                original_price = original_price_elem.get_text(strip=True) if original_price_elem else "N/A"
-
-                current_price = self._clean_price(current_price)
-                original_price = self._clean_price(original_price)
+                current_price = self._clean_price(sale_price_elem.get_text(strip=True))
+                original_price = self._clean_price(original_price_elem.get_text(strip=True)) if original_price_elem else "N/A"
 
                 if not current_price or current_price == "N/A":
                     continue
 
                 discount_percent = self._calculate_discount(current_price, original_price)
-
-                # Only include items with actual discounts
                 if discount_percent <= 0:
                     continue
 
