@@ -28,6 +28,25 @@ HEADERS = {
 # Store configuration - which stores to scrape
 ENABLED_STORES = ['iconic', 'asos', 'myer', 'jbhifi', 'davidjones']  # Add/remove stores here
 
+# Category group mappings — broad UI group names → category key substrings to match
+CATEGORY_GROUPS = {
+    'tops': ['Tops', 'T-Shirts', 'T-Shirts & Singlets', 'Shirts', 'Shirts & Polos'],
+    'jeans': ['Jeans'],
+    'shoes': ['Shoes', 'Sneakers', 'Boots', 'Heels', 'Flats', 'Sandals', 'Sandals & Thongs',
+              'Mules & Slides', 'Trainers', 'Slip Ons & Loafers', 'Casual Shoes', 'Dress Shoes'],
+    'jackets': ['Jackets & Coats', 'Coats & Jackets'],
+    'dresses': ['Dresses'],
+    'pants': ['Pants', 'Trousers & Chinos', 'Trousers & Leggings'],
+    'shorts': ['Shorts'],
+    'knitwear': ['Knitwear', 'Jumpers & Cardigans', 'Sweats & Hoodies', 'Hoodies & Sweatshirts'],
+    'skirts': ['Skirts'],
+    'activewear': ['Activewear'],
+    'swimwear': ['Swimwear'],
+    'suits': ['Suits & Blazers', 'Suits'],
+    'electronics': ['Laptops', 'Headphones', 'Speakers', 'TVs', 'Phones', 'Gaming',
+                    'Cameras', 'Smart Home', 'Wearables', 'Audio'],
+}
+
 
 class AsyncDiscountScraper:
     """Async scraper that fetches all categories in parallel"""
@@ -67,32 +86,6 @@ class AsyncDiscountScraper:
             'Slip Ons & Loafers': 'mens-shoes-slip-ons-loafers-sale/',
         }
 
-        self.iconic_womens_categories = {
-            # Clothing
-            'Tops': 'womens-clothing-tops-sale/',
-            'T-Shirts & Singlets': 'womens-clothing-t-shirts-singlets-sale/',
-            'Dresses': 'womens-clothing-dresses-sale/',
-            'Jeans': 'womens-clothing-jeans-sale/',
-            'Pants': 'womens-clothing-pants-sale/',
-            'Shorts': 'womens-clothing-shorts-sale/',
-            'Skirts': 'womens-clothing-skirts-sale/',
-            'Coats & Jackets': 'womens-clothing-coats-jackets-sale/',
-            'Knitwear': 'womens-clothing-knitwear-sale/',
-            'Sweats & Hoodies': 'womens-clothing-sweats-hoodies-sale/',
-            'Swimwear': 'womens-clothing-swimwear-sale/',
-            'Activewear': 'womens-clothing-activewear-sale/',
-            'Loungewear': 'womens-clothing-loungewear-sale/',
-            'Sleepwear': 'womens-clothing-sleepwear-sale/',
-            'Lingerie & Underwear': 'womens-clothing-lingerie-underwear-sale/',
-            # Shoes
-            'Sneakers': 'womens-shoes-sneakers-sale/',
-            'Boots': 'womens-shoes-boots-sale/',
-            'Heels': 'womens-shoes-heels-sale/',
-            'Flats': 'womens-shoes-flats-sale/',
-            'Sandals': 'womens-shoes-sandals-sale/',
-            'Mules & Slides': 'womens-shoes-mules-slides-sale/',
-        }
-
         # ASOS categories (AU site)
         self.asos_categories = {
             'T-Shirts': 'au/men/sale/t-shirts-vests/cat/?cid=5990',
@@ -107,20 +100,6 @@ class AsyncDiscountScraper:
             'Trainers': 'au/men/sale/shoes/trainers/cat/?cid=5775',
         }
 
-        self.asos_womens_categories = {
-            'Dresses': 'au/women/sale/dresses/cat/?cid=8517',
-            'Tops': 'au/women/sale/tops/cat/?cid=4169',
-            'T-Shirts': 'au/women/sale/t-shirts-singlets/cat/?cid=4174',
-            'Jackets & Coats': 'au/women/sale/jackets-coats/cat/?cid=2641',
-            'Jeans': 'au/women/sale/jeans/cat/?cid=4208',
-            'Trousers & Leggings': 'au/women/sale/trousers-leggings/cat/?cid=4910',
-            'Shorts': 'au/women/sale/shorts/cat/?cid=2639',
-            'Skirts': 'au/women/sale/skirts/cat/?cid=4169',
-            'Knitwear': 'au/women/sale/jumpers-cardigans/cat/?cid=7617',
-            'Shoes': 'au/women/sale/shoes/cat/?cid=6992',
-            'Trainers': 'au/women/sale/shoes/trainers/cat/?cid=4172',
-        }
-
         # Myer categories
         self.myer_categories = {
             'Shirts': 'men/shirts',
@@ -132,18 +111,6 @@ class AsyncDiscountScraper:
             'Shorts': 'men/shorts',
             'Suits': 'men/suits',
             'Shoes': 'men/shoes',
-        }
-
-        self.myer_womens_categories = {
-            'Tops': 'women/tops',
-            'Dresses': 'women/dresses',
-            'Jeans': 'women/jeans',
-            'Pants': 'women/pants',
-            'Skirts': 'women/skirts',
-            'Jackets & Coats': 'women/jackets-coats',
-            'Knitwear': 'women/knitwear',
-            'Shoes': 'women/shoes',
-            'Activewear': 'women/activewear',
         }
 
         # JB Hi-Fi categories (electronics/tech deals)
@@ -204,41 +171,6 @@ class AsyncDiscountScraper:
             'Clearance Page 3': 'sale/men/clearance?page=3',
         }
 
-        # David Jones women's categories
-        self.davidjones_womens_categories = {
-            # Clothing (10 pages)
-            'Clothing': 'sale/women/clothing',
-            'Clothing Page 2': 'sale/women/clothing?page=2',
-            'Clothing Page 3': 'sale/women/clothing?page=3',
-            'Clothing Page 4': 'sale/women/clothing?page=4',
-            'Clothing Page 5': 'sale/women/clothing?page=5',
-            'Clothing Page 6': 'sale/women/clothing?page=6',
-            'Clothing Page 7': 'sale/women/clothing?page=7',
-            'Clothing Page 8': 'sale/women/clothing?page=8',
-            'Clothing Page 9': 'sale/women/clothing?page=9',
-            'Clothing Page 10': 'sale/women/clothing?page=10',
-            # Shoes (6 pages)
-            'Shoes': 'sale/women/shoes',
-            'Shoes Page 2': 'sale/women/shoes?page=2',
-            'Shoes Page 3': 'sale/women/shoes?page=3',
-            'Shoes Page 4': 'sale/women/shoes?page=4',
-            'Shoes Page 5': 'sale/women/shoes?page=5',
-            'Shoes Page 6': 'sale/women/shoes?page=6',
-            # Accessories (4 pages)
-            'Accessories': 'sale/women/accessories',
-            'Accessories Page 2': 'sale/women/accessories?page=2',
-            'Accessories Page 3': 'sale/women/accessories?page=3',
-            'Accessories Page 4': 'sale/women/accessories?page=4',
-            # Bags (4 pages)
-            'Bags': 'sale/women/bags',
-            'Bags Page 2': 'sale/women/bags?page=2',
-            'Bags Page 3': 'sale/women/bags?page=3',
-            'Bags Page 4': 'sale/women/bags?page=4',
-            # Clearance (3 pages)
-            'Clearance': 'sale/women/clearance',
-            'Clearance Page 2': 'sale/women/clearance?page=2',
-            'Clearance Page 3': 'sale/women/clearance?page=3',
-        }
 
     async def fetch_page(self, session: aiohttp.ClientSession, url: str, referer: str = None) -> str:
         """Fetch a single page asynchronously"""
@@ -716,12 +648,52 @@ class AsyncDiscountScraper:
                 return f"{base_url}{url}"
         return ""
 
-    async def scrape_all(self, stores: List[str] = None) -> List[Dict]:
+    def _deal_score_proxy(self, item: Dict) -> float:
+        """Lightweight deal score for backend sorting (discount % + brand tier bonus)"""
+        discount = float(item.get('discount_percent') or 0)
+        brand = (item.get('brand') or '').lower()
+        luxury = ['gucci','prada','burberry','versace','balenciaga','saint laurent','givenchy',
+                  'valentino','fendi','tom ford','alexander mcqueen','off-white','balmain']
+        premium = ['hugo boss','boss','calvin klein','tommy hilfiger','ralph lauren','lacoste',
+                   'ted baker','paul smith','reiss','allsaints','armani','michael kors','diesel',
+                   'fred perry','gant','barbour','r.m. williams','country road','mj bale','calibre']
+        if any(b in brand for b in luxury):
+            tier_bonus = 25
+        elif any(b in brand for b in premium):
+            tier_bonus = 18
+        else:
+            tier_bonus = 10
+        try:
+            current = float(item['current_price'].replace('$','').replace(',',''))
+            original = float(item['original_price'].replace('$','').replace(',',''))
+            savings_bonus = min(15, ((original - current) / 300) * 15)
+        except Exception:
+            savings_bonus = 0
+        return (discount / 70) * 40 + tier_bonus + savings_bonus
+
+    def _category_matches(self, category_name: str, category_groups: List[str]) -> bool:
+        """Check if a category key matches any of the requested groups"""
+        if not category_groups:
+            return True  # No filter = include all
+        for group in category_groups:
+            group_keys = CATEGORY_GROUPS.get(group, [])
+            # Match if the category name starts with any key in the group
+            # (handles "Clothing Page 2" matching "Clothing" for DJ)
+            for key in group_keys:
+                if category_name == key or category_name.startswith(key + ' '):
+                    return True
+        return False
+
+    async def scrape_all(self, stores: List[str] = None,
+                         category_groups: List[str] = None) -> List[Dict]:
         """Scrape all sources in parallel
 
         Args:
             stores: List of stores to scrape. Options: 'iconic', 'asos', 'myer', 'jbhifi', 'davidjones'
                     If None, uses ENABLED_STORES configuration.
+            category_groups: List of category group keys (e.g. 'tops', 'jeans', 'shoes').
+                             See CATEGORY_GROUPS for valid values.
+                             If None or empty, includes all categories.
         """
         if stores is None:
             stores = ENABLED_STORES
@@ -736,51 +708,40 @@ class AsyncDiscountScraper:
             # Build list of all tasks with metadata
             tasks = []  # List of (store, category_name, gender, fetch_coroutine)
 
-            # The Iconic tasks - Men
             if 'iconic' in stores:
                 for category_name, category_path in self.iconic_categories.items():
+                    if not self._category_matches(category_name, category_groups):
+                        continue
                     url = f"{self.iconic_url}/{category_path}"
                     tasks.append(('iconic', category_name, 'Men', self.fetch_page(session, url, self.iconic_url)))
-                # The Iconic tasks - Women
-                for category_name, category_path in self.iconic_womens_categories.items():
-                    url = f"{self.iconic_url}/{category_path}"
-                    tasks.append(('iconic', category_name, 'Women', self.fetch_page(session, url, self.iconic_url)))
 
-            # ASOS tasks - Men
             if 'asos' in stores:
                 for category_name, category_path in self.asos_categories.items():
+                    if not self._category_matches(category_name, category_groups):
+                        continue
                     url = f"{self.asos_url}/{category_path}"
                     tasks.append(('asos', category_name, 'Men', self.fetch_page(session, url, self.asos_url)))
-                # ASOS tasks - Women
-                for category_name, category_path in self.asos_womens_categories.items():
-                    url = f"{self.asos_url}/{category_path}"
-                    tasks.append(('asos', category_name, 'Women', self.fetch_page(session, url, self.asos_url)))
 
-            # Myer tasks - Men
             if 'myer' in stores:
                 for category_name, category_path in self.myer_categories.items():
+                    if not self._category_matches(category_name, category_groups):
+                        continue
                     url = f"{self.myer_url}/{category_path}?sortBy=OnSale"
                     tasks.append(('myer', category_name, 'Men', self.fetch_page(session, url, self.myer_url)))
-                # Myer tasks - Women
-                for category_name, category_path in self.myer_womens_categories.items():
-                    url = f"{self.myer_url}/{category_path}?sortBy=OnSale"
-                    tasks.append(('myer', category_name, 'Women', self.fetch_page(session, url, self.myer_url)))
 
-            # JB Hi-Fi tasks (Unisex - electronics)
             if 'jbhifi' in stores:
                 for category_name, category_path in self.jbhifi_categories.items():
+                    if not self._category_matches(category_name, category_groups):
+                        continue
                     url = f"{self.jbhifi_url}/{category_path}"
                     tasks.append(('jbhifi', category_name, 'Unisex', self.fetch_page(session, url, self.jbhifi_url)))
 
-            # David Jones tasks - Men
             if 'davidjones' in stores:
                 for category_name, category_path in self.davidjones_categories.items():
+                    if not self._category_matches(category_name, category_groups):
+                        continue
                     url = f"{self.davidjones_url}/{category_path}"
                     tasks.append(('davidjones', category_name, 'Men', self.fetch_page(session, url, self.davidjones_url)))
-                # David Jones tasks - Women
-                for category_name, category_path in self.davidjones_womens_categories.items():
-                    url = f"{self.davidjones_url}/{category_path}"
-                    tasks.append(('davidjones', category_name, 'Women', self.fetch_page(session, url, self.davidjones_url)))
 
             # Execute all requests in parallel
             logger.info(f"Fetching {len(tasks)} pages from {len(stores)} stores in parallel...")
@@ -825,8 +786,22 @@ class AsyncDiscountScraper:
             for store, count in store_counts.items():
                 logger.info(f"Total from {store}: {count} items")
 
-        # Sort by discount percentage (highest first)
-        all_items.sort(key=lambda x: x.get('discount_percent', 0), reverse=True)
+        # Limit to top 50 per category by deal score proxy
+        TOP_N = 50
+        by_category: Dict[str, List[Dict]] = {}
+        for item in all_items:
+            cat = item.get('category', 'Other')
+            by_category.setdefault(cat, []).append(item)
+
+        all_items = []
+        for cat, cat_items in by_category.items():
+            cat_items.sort(key=self._deal_score_proxy, reverse=True)
+            all_items.extend(cat_items[:TOP_N])
+            if len(cat_items) > TOP_N:
+                logger.info(f"{cat}: kept top {TOP_N} of {len(cat_items)} items")
+
+        # Final sort by deal score proxy
+        all_items.sort(key=self._deal_score_proxy, reverse=True)
 
         total_time = (datetime.now() - start_time).total_seconds()
         logger.info(f"Total scraping complete: {len(all_items)} items in {total_time:.2f}s")
@@ -834,10 +809,11 @@ class AsyncDiscountScraper:
         return all_items
 
 
-def scrape_all_sync() -> List[Dict]:
+def scrape_all_sync(stores: List[str] = None,
+                    category_groups: List[str] = None) -> List[Dict]:
     """Synchronous wrapper for async scraping - use this from sync code"""
     scraper = AsyncDiscountScraper()
-    return asyncio.run(scraper.scrape_all())
+    return asyncio.run(scraper.scrape_all(stores=stores, category_groups=category_groups))
 
 
 if __name__ == "__main__":
