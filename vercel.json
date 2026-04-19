@@ -11,6 +11,10 @@
   ],
   "routes": [
     {
+      "src": "/api/history(.*)",
+      "dest": "api/scrape.py"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "api/scrape.py"
     },

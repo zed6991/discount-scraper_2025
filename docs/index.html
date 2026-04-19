@@ -3,47 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discount Finder - The Iconic, ASOS, Myer, JB Hi-Fi & David Jones</title>
+    <title>DealFinder — Men's Sale Tracker</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>Discount Finder</h1>
-                <p class="subtitle">Find the best deals on fashion</p>
-            </div>
-            <div class="header-stats">
-                <div class="stat-item">
-                    <span class="stat-value" id="totalItems">0</span>
-                    <span class="stat-label">Items</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="avgDiscount">0%</span>
-                    <span class="stat-label">Avg Discount</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="lastUpdated">--</span>
-                    <span class="stat-label">Last Updated</span>
-                </div>
-            </div>
-        </header>
-
-        <div class="filters">
-            <!-- Search Bar -->
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search brands or products..." autocomplete="off">
-                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
+    <!-- Top Nav -->
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <div class="brand">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
                 </svg>
+                <span>DealFinder</span>
+            </div>
+            <div class="nav-stats">
+                <div class="nav-stat">
+                    <span class="nav-stat-value" id="totalItems">—</span>
+                    <span class="nav-stat-label">deals</span>
+                </div>
+                <div class="nav-stat-divider"></div>
+                <div class="nav-stat">
+                    <span class="nav-stat-value" id="avgDiscount">—</span>
+                    <span class="nav-stat-label">avg off</span>
+                </div>
+                <div class="nav-stat-divider"></div>
+                <div class="nav-stat">
+                    <span class="nav-stat-value" id="lastUpdated">—</span>
+                    <span class="nav-stat-label">updated</span>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-primary" id="scrapeBtn" onclick="scrapeDeals()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <span class="btn-text">Refresh Deals</span>
+                    <span class="btn-loader"></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Search -->
+            <div class="sidebar-section">
+                <div class="search-wrap">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search brands, products…" autocomplete="off">
+                    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear">×</button>
+                </div>
             </div>
 
-            <div class="filter-grid">
+            <!-- Filters -->
+            <div class="sidebar-section">
+                <p class="sidebar-label">Filters</p>
+
                 <div class="filter-group">
                     <label for="source">Store</label>
                     <select id="source">
@@ -64,10 +90,21 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="brand">Brand</label>
-                    <select id="brand">
-                        <option value="all">All Brands</option>
-                    </select>
+                    <label>Brand</label>
+                    <div class="brand-filter-wrap">
+                        <div class="brand-filter-tabs">
+                            <button class="brand-tab active" data-mode="show" onclick="setBrandFilterMode('show')">Show only</button>
+                            <button class="brand-tab" data-mode="hide" onclick="setBrandFilterMode('hide')">Hide</button>
+                        </div>
+                        <div class="brand-search-wrap">
+                            <input type="text" id="brandSearchInput" placeholder="Search brands…" autocomplete="off" oninput="filterBrandList()">
+                        </div>
+                        <div class="brand-list" id="brandList"></div>
+                        <div class="brand-filter-footer" id="brandFilterFooter" style="display:none">
+                            <span id="brandFilterSummary"></span>
+                            <button class="btn-clear-brands" onclick="clearBrandFilter()">Clear</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="filter-group">
@@ -78,16 +115,6 @@
                         <option value="premium">Premium</option>
                         <option value="midrange">Mid-Range</option>
                         <option value="budget">Budget</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label for="gender">Gender</label>
-                    <select id="gender">
-                        <option value="all">All</option>
-                        <option value="Men">Men</option>
-                        <option value="Women">Women</option>
-                        <option value="Unisex">Unisex</option>
                     </select>
                 </div>
 
@@ -107,7 +134,7 @@
                     <label>Price Range</label>
                     <div class="price-range-inputs">
                         <input type="number" id="minPrice" placeholder="Min $" min="0" step="1">
-                        <span class="price-separator">-</span>
+                        <span class="price-sep">–</span>
                         <input type="number" id="maxPrice" placeholder="Max $" min="0" step="1">
                     </div>
                 </div>
@@ -117,128 +144,198 @@
                     <select id="sortBy">
                         <option value="score">Best Deal Score</option>
                         <option value="discount">Highest Discount %</option>
-                        <option value="savings">Highest Discount $</option>
-                        <option value="price_low">Price: Low to High</option>
-                        <option value="price_high">Price: High to Low</option>
+                        <option value="savings">Highest Savings $</option>
+                        <option value="price_low">Price: Low → High</option>
+                        <option value="price_high">Price: High → Low</option>
                     </select>
                 </div>
-            </div>
 
-            <div class="filter-actions">
-                <button class="btn btn-primary" id="scrapeBtn" onclick="scrapeDeals()">
-                    <span class="btn-text">Refresh Deals</span>
-                    <span class="btn-loader"></span>
-                </button>
-                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
-                <label class="favorites-toggle">
-                    <input type="checkbox" id="showFavoritesOnly">
-                    <span class="toggle-label">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                <div class="filter-row-btns">
+                    <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 .49-4"></path>
                         </svg>
-                        Favorites Only
-                    </span>
-                </label>
-            </div>
-
-            <!-- Favorite Brands Section -->
-            <div class="favorite-brands-section">
-                <div class="favorite-brands-header">
-                    <h3>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                        </svg>
-                        Favorite Brands
-                    </h3>
-                </div>
-                <div id="favoriteBrandsList" class="favorite-brands-list">
-                    <span class="no-favorites">No favorite brands yet. Click the heart on any brand to add it.</span>
+                        Reset filters
+                    </button>
+                    <label class="toggle-pill">
+                        <input type="checkbox" id="showFavoritesOnly">
+                        <span>❤ Favs only</span>
+                    </label>
                 </div>
             </div>
 
+            <!-- Scrape Settings -->
+            <div class="sidebar-section scrape-config">
+                <p class="sidebar-label">
+                    What to scrape
+                    <span class="sidebar-hint">leave blank = all</span>
+                </p>
+
+                <div class="config-row">
+                    <span class="config-row-label">Category</span>
+                    <div class="chip-group" id="configCategories">
+                        <label class="chip"><input type="checkbox" value="tops"><span>Tops</span></label>
+                        <label class="chip"><input type="checkbox" value="jeans"><span>Jeans</span></label>
+                        <label class="chip"><input type="checkbox" value="shoes"><span>Shoes</span></label>
+                        <label class="chip"><input type="checkbox" value="jackets"><span>Jackets</span></label>
+                        <label class="chip"><input type="checkbox" value="pants"><span>Pants</span></label>
+                        <label class="chip"><input type="checkbox" value="shorts"><span>Shorts</span></label>
+                        <label class="chip"><input type="checkbox" value="knitwear"><span>Knitwear</span></label>
+                        <label class="chip"><input type="checkbox" value="suits"><span>Suits</span></label>
+                        <label class="chip"><input type="checkbox" value="activewear"><span>Activewear</span></label>
+                        <label class="chip"><input type="checkbox" value="swimwear"><span>Swimwear</span></label>
+                        <label class="chip"><input type="checkbox" value="electronics"><span>Electronics</span></label>
+                    </div>
+                </div>
+
+                <div class="config-row">
+                    <span class="config-row-label">Store</span>
+                    <div class="chip-group" id="configStores">
+                        <label class="chip"><input type="checkbox" value="iconic"><span>The Iconic</span></label>
+                        <label class="chip"><input type="checkbox" value="asos"><span>ASOS</span></label>
+                        <label class="chip"><input type="checkbox" value="myer"><span>Myer</span></label>
+                        <label class="chip"><input type="checkbox" value="jbhifi"><span>JB Hi-Fi</span></label>
+                        <label class="chip"><input type="checkbox" value="davidjones"><span>David Jones</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Favorite Brands -->
+            <div class="sidebar-section">
+                <p class="sidebar-label">Favorite Brands</p>
+                <div id="favoriteBrandsList" class="fav-brands-list">
+                    <span class="fav-empty">No favorites yet — heart a brand below</span>
+                </div>
+            </div>
+
+            <!-- Status -->
             <div class="status-bar">
+                <span class="status-dot" id="statusDot"></span>
                 <span id="statusText">Ready</span>
-                <span id="cacheInfo"></span>
+                <span class="status-badge" id="cacheInfo"></span>
             </div>
-        </div>
+        </aside>
 
-        <!-- Stats Dashboard -->
-        <div id="statsDashboard" class="stats-dashboard">
-            <div class="stats-header">
-                <h2>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 20V10"></path>
-                        <path d="M12 20V4"></path>
-                        <path d="M6 20v-6"></path>
-                    </svg>
-                    Deal Insights
-                </h2>
-                <button class="btn btn-sm" onclick="toggleDashboard()">
-                    <span id="dashboardToggleText">Hide</span>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Deal Insights Dashboard -->
+            <section class="dashboard" id="statsDashboard">
+                <div class="dashboard-header">
+                    <h2>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path>
+                        </svg>
+                        Deal Insights
+                    </h2>
+                    <button class="btn btn-ghost btn-sm" onclick="toggleDashboard()">
+                        <span id="dashboardToggleText">Hide</span>
+                    </button>
+                </div>
+
+                <div id="dashboardContent">
+                    <div class="kpi-row">
+                        <div class="kpi-card kpi-savings">
+                            <span class="kpi-icon">💰</span>
+                            <span class="kpi-value" id="totalSavings">$0</span>
+                            <span class="kpi-label">Potential Savings</span>
+                        </div>
+                        <div class="kpi-card kpi-score">
+                            <span class="kpi-icon">⭐</span>
+                            <span class="kpi-value" id="bestDealScore">0</span>
+                            <span class="kpi-label">Best Score</span>
+                        </div>
+                        <div class="kpi-card kpi-price">
+                            <span class="kpi-icon">🏷️</span>
+                            <span class="kpi-value" id="avgPrice">$0</span>
+                            <span class="kpi-label">Avg Sale Price</span>
+                        </div>
+                        <div class="kpi-card kpi-brand">
+                            <span class="kpi-icon">🏆</span>
+                            <span class="kpi-value kpi-brand-name" id="topBrand">—</span>
+                            <span class="kpi-label">Top Brand</span>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>By Category</h3>
+                            <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>By Brand Tier</h3>
+                            <div class="chart-wrap"><canvas id="tierChart"></canvas></div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Price Range</h3>
+                            <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+                        </div>
+                        <div class="chart-card chart-featured">
+                            <h3>Deal Score Distribution</h3>
+                            <div class="chart-wrap chart-wrap-featured"><canvas id="scoreChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Header -->
+            <div class="results-header">
+                <span class="results-count" id="resultsCount">— deals</span>
+                <span class="results-sub" id="resultsPage"></span>
+            </div>
+
+            <!-- Items Grid -->
+            <div id="itemsContainer" class="items-grid">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                    </div>
+                    <h3>Find Your Next Deal</h3>
+                    <p>We scan The Iconic, ASOS, Myer, JB Hi-Fi &amp; David Jones in real-time and score every discount so you never miss a bargain.</p>
+                    <button class="btn btn-primary" onclick="scrapeDeals()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh Deals
+                    </button>
+                    <div class="empty-features">
+                        <span class="empty-feature-pill">✓ Real-time prices</span>
+                        <span class="empty-feature-pill">✓ Deal scoring</span>
+                        <span class="empty-feature-pill">✓ 5 stores</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="pagination" style="display: none;">
+                <button class="btn btn-secondary" id="prevPage" onclick="changePage(-1)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    Prev
+                </button>
+                <span id="pageInfo">Page 1 of 1</span>
+                <button class="btn btn-secondary" id="nextPage" onclick="changePage(1)">
+                    Next
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
             </div>
-            <div id="dashboardContent" class="dashboard-content">
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <h3>Deals by Category</h3>
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <h3>Deals by Brand Tier</h3>
-                        <canvas id="tierChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <h3>Price Distribution</h3>
-                        <canvas id="priceChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <h3>Deal Score Distribution</h3>
-                        <canvas id="scoreChart"></canvas>
-                    </div>
-                </div>
-                <div class="stats-summary">
-                    <div class="summary-card">
-                        <span class="summary-value" id="totalSavings">$0</span>
-                        <span class="summary-label">Total Potential Savings</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value" id="bestDealScore">0</span>
-                        <span class="summary-label">Best Deal Score</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value" id="avgPrice">$0</span>
-                        <span class="summary-label">Avg Sale Price</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value" id="topBrand">-</span>
-                        <span class="summary-label">Top Brand (by deals)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="itemsContainer" class="items-grid">
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <path d="M16 10a4 4 0 0 1-8 0"></path>
-                    </svg>
-                </div>
-                <h3>No deals loaded</h3>
-                <p>Click "Refresh Deals" to fetch the latest discounts</p>
-            </div>
-        </div>
-
-        <!-- Pagination -->
-        <div id="pagination" class="pagination" style="display: none;">
-            <button class="btn btn-secondary" id="prevPage" onclick="changePage(-1)">Previous</button>
-            <span id="pageInfo">Page 1 of 1</span>
-            <button class="btn btn-secondary" id="nextPage" onclick="changePage(1)">Next</button>
-        </div>
+        </main>
     </div>
 
+    <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+    </button>
+
     <script src="js/app.js"></script>
+    <script>
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('scrollTopBtn');
+            if (btn) btn.classList.toggle('visible', window.scrollY > 400);
+        });
+    </script>
 </body>
 </html>
