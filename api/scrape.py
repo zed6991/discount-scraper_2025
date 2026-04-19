@@ -99,7 +99,13 @@ class handler(BaseHTTPRequestHandler):
                 print(f'Cache miss — scraping stores={stores} categories={category_groups}', flush=True)
                 start_time = datetime.now()
 
-                sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                api_dir = os.path.dirname(os.path.abspath(__file__))
+                if root_dir not in sys.path:
+                    sys.path.insert(0, root_dir)
+                if api_dir not in sys.path:
+                    sys.path.insert(0, api_dir)
+
                 from discount_scraper_async import scrape_all_sync
 
                 items = scrape_all_sync(stores=stores, category_groups=category_groups)
@@ -108,9 +114,9 @@ class handler(BaseHTTPRequestHandler):
 
                 set_cache(cache_key, items)
 
-                # Persist to Supabase in the background (non-blocking best-effort)
+                # Persist to Supabase (best-effort)
                 try:
-                    from api.supabase_client import save_price_history, _product_id
+                    from supabase_client import save_price_history, _product_id
                     save_price_history(items)
                     # Attach stable product_id to each item so the frontend can request history
                     for item in items:
@@ -147,8 +153,10 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         try:
-            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            from api.supabase_client import get_price_history, get_price_history_batch
+            api_dir = os.path.dirname(os.path.abspath(__file__))
+            if api_dir not in sys.path:
+                sys.path.insert(0, api_dir)
+            from supabase_client import get_price_history, get_price_history_batch
 
             qs = parse_qs(parsed.query)
 
