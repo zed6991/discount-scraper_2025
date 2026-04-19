@@ -233,7 +233,7 @@ const FILTER_DEFAULTS = {
 function saveFilterState() {
     try {
         const state = {
-            source: document.getElementById('source').value,
+            source: 'all', // never persist store filter — scrape always fetches all
             category: document.getElementById('category').value,
             brandTier: document.getElementById('brandTier').value,
             minDiscount: document.getElementById('minDiscount').value,
