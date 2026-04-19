@@ -665,6 +665,7 @@ function displayItems(items) {
     `}).join('');
 
     // Attach product_id data attr to each card and fetch sparkline history
+    const pageItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const cards = document.querySelectorAll('.item-card');
     cards.forEach((card, i) => {
         const item = pageItems[i];
