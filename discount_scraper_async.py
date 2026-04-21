@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import List, Dict
 import logging
 import re
+from playwright.async_api import async_playwright
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -187,6 +188,22 @@ class AsyncDiscountScraper:
                     return ""
         except Exception as e:
             logger.error(f"Error fetching {url}: {e}")
+            return ""
+
+    async def fetch_page_playwright(self, url: str) -> str:
+        """Fetch a JS-rendered page using Playwright (used for David Jones)"""
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page(user_agent=HEADERS['User-Agent'])
+                await page.goto(url, wait_until='networkidle', timeout=30000)
+                # Wait for product cards to appear
+                await page.wait_for_selector('article', timeout=15000)
+                html = await page.content()
+                await browser.close()
+                return html
+        except Exception as e:
+            logger.error(f"Playwright error fetching {url}: {e}")
             return ""
 
     def parse_iconic_category(self, html: str, category_name: str, gender: str = 'Men') -> List[Dict]:
@@ -543,9 +560,9 @@ class AsyncDiscountScraper:
 
         soup = BeautifulSoup(html, 'lxml')
 
-        # DJ uses CSS modules with hashed class names — match on the suffix after the hash
+        # DJ uses CSS modules with hashed class names — BS4 passes one class string at a time to callable
         def has_class_suffix(suffix):
-            return lambda x: x and any(c.endswith(suffix) for c in x) if x else False
+            return lambda x: x and x.endswith(suffix)
 
         products = soup.find_all('article')
 
@@ -570,29 +587,31 @@ class AsyncDiscountScraper:
                 if not product_name:
                     continue
 
-                # Sale price: <span> with class ending in '__salePrice'
-                sale_price_elem = product.find('span', class_=has_class_suffix('__salePrice'))
-                # Original price: <span> with class ending in '__inactivePrice'
-                original_price_elem = product.find('span', class_=has_class_suffix('__inactivePrice'))
-
-                # Fallback: any span with '__price' but not inactive
-                if not sale_price_elem:
-                    sale_price_elem = product.find('span', class_=lambda x: x and any(
-                        c.endswith('__price') and 'inactive' not in c.lower() for c in x
-                    ) if x else False)
-
-                if not sale_price_elem:
+                # Discount label: e.g. "SAVE 20%" in SpecialOfferDescription span
+                offer_elem = product.find('span', class_=has_class_suffix('__ctaInfo'))
+                if not offer_elem:
                     continue
+                offer_text = offer_elem.get_text(strip=True)
+                discount_match = re.search(r'(\d+)%', offer_text)
+                if not discount_match:
+                    continue
+                discount_percent = int(discount_match.group(1))
 
-                current_price = self._clean_price(sale_price_elem.get_text(strip=True))
-                original_price = self._clean_price(original_price_elem.get_text(strip=True)) if original_price_elem else "N/A"
-
+                # Price: visible span with '__price' suffix (aria-hidden to avoid screen-reader duplicate)
+                price_elem = product.find('span', attrs={'aria-hidden': 'true'}, class_=has_class_suffix('__price'))
+                if not price_elem:
+                    continue
+                current_price = self._clean_price(price_elem.get_text(strip=True))
                 if not current_price or current_price == "N/A":
                     continue
 
-                discount_percent = self._calculate_discount(current_price, original_price)
-                if discount_percent <= 0:
-                    continue
+                # Derive original price from discount
+                try:
+                    sale_val = float(current_price.replace('$', '').replace(',', ''))
+                    original_val = round(sale_val / (1 - discount_percent / 100), 2)
+                    original_price = f"${original_val:.2f}"
+                except Exception:
+                    original_price = "N/A"
 
                 items.append({
                     'source': 'David Jones',
@@ -738,7 +757,7 @@ class AsyncDiscountScraper:
                     if not self._category_matches(category_name, category_groups):
                         continue
                     url = f"{self.davidjones_url}/{category_path}"
-                    tasks.append(('davidjones', category_name, 'Men', self.fetch_page(session, url, self.davidjones_url)))
+                    tasks.append(('davidjones', category_name, 'Men', self.fetch_page_playwright(url)))
 
             # Execute all requests in parallel
             logger.info(f"Fetching {len(tasks)} pages from {len(stores)} stores in parallel...")
