@@ -110,6 +110,56 @@ def save_price_history(items: list) -> int:
     return len(snapshots)
 
 
+def get_latest_items(stores=None, category_groups=None) -> list:
+    """
+    Return the latest scraped item for each product from Supabase.
+    Joins products + most recent price_history snapshot.
+    """
+    # Fetch latest snapshot per product using a view or RPC if available,
+    # otherwise fetch recent price_history + products separately and merge.
+    path = (
+        'price_history'
+        '?order=scraped_at.desc'
+        '&limit=2000'
+        '&select=product_id,current_price,original_price,discount_percent,scraped_at,'
+        'products(source,brand,name,url,category,gender)'
+    )
+    rows = _request('GET', path, extra_headers={'Prefer': ''})
+    if not isinstance(rows, list):
+        return []
+
+    # Deduplicate — keep only the most recent snapshot per product
+    seen = set()
+    items = []
+    for row in rows:
+        pid = row.get('product_id')
+        if pid in seen:
+            continue
+        seen.add(pid)
+        product = row.get('products') or {}
+        source = product.get('source', '')
+        category = product.get('category', '')
+
+        if stores and source.lower().replace(' ', '') not in [s.lower().replace(' ', '') for s in stores]:
+            continue
+
+        items.append({
+            'product_id': pid,
+            'source': source,
+            'brand': product.get('brand', ''),
+            'name': product.get('name', ''),
+            'url': product.get('url', ''),
+            'category': category,
+            'gender': product.get('gender', 'Men'),
+            'current_price': f"${row['current_price']:.2f}" if row.get('current_price') else 'N/A',
+            'original_price': f"${row['original_price']:.2f}" if row.get('original_price') else 'N/A',
+            'discount_percent': row.get('discount_percent', 0),
+            'scraped_at': row.get('scraped_at', ''),
+        })
+
+    return items
+
+
 def get_price_history(product_id: str) -> list:
     """Return price history rows for a single product, newest first, last 90 days."""
     path = (

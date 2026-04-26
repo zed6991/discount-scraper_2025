@@ -96,41 +96,19 @@ class handler(BaseHTTPRequestHandler):
                     'cache_age_seconds': round(cache_age),
                 }
             else:
-                print(f'Cache miss — scraping stores={stores} categories={category_groups}', flush=True)
-                start_time = datetime.now()
-
-                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                api_dir = os.path.dirname(os.path.abspath(__file__))
-                if root_dir not in sys.path:
-                    sys.path.insert(0, root_dir)
-                if api_dir not in sys.path:
-                    sys.path.insert(0, api_dir)
-
-                from discount_scraper_async import scrape_all_sync
-
-                items = scrape_all_sync(stores=stores, category_groups=category_groups)
-                scrape_time = (datetime.now() - start_time).total_seconds()
-                print(f'Scraping complete: {len(items)} items in {scrape_time:.2f}s', flush=True)
+                # Read from Supabase (populated by local run_scraper.py)
+                from supabase_client import get_latest_items
+                items = get_latest_items(stores=stores, category_groups=category_groups)
+                print(f'Supabase: loaded {len(items)} items', flush=True)
 
                 set_cache(cache_key, items)
-
-                # Persist to Supabase (best-effort)
-                try:
-                    from supabase_client import save_price_history, _product_id
-                    save_price_history(items)
-                    # Attach stable product_id to each item so the frontend can request history
-                    for item in items:
-                        item['product_id'] = _product_id(item)
-                except Exception as sb_err:
-                    print(f'Supabase write skipped: {sb_err}', flush=True)
-
                 response = {
                     'success': True,
                     'items': items,
                     'total': len(items),
                     'timestamp': datetime.now().isoformat(),
                     'cached': False,
-                    'scrape_time_seconds': round(scrape_time, 2),
+                    'source': 'supabase',
                 }
 
         except Exception as e:

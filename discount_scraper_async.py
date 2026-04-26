@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import List, Dict
 import logging
 import re
-from playwright.async_api import async_playwright
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -193,6 +192,7 @@ class AsyncDiscountScraper:
     async def fetch_page_playwright(self, url: str) -> str:
         """Fetch a JS-rendered page using Playwright (used for David Jones)"""
         try:
+            from playwright.async_api import async_playwright
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 page = await browser.new_page(user_agent=HEADERS['User-Agent'])
