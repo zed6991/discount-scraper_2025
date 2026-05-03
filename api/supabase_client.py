@@ -30,7 +30,7 @@ def _request(method: str, path: str, body=None, extra_headers=None) -> dict:
             raw = resp.read()
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
-        print(f'Supabase {method} {path} → {e.code}: {e.read().decode()}', flush=True)
+        print(f'Supabase {method} {path} -> {e.code}: {e.read().decode()}', flush=True)
         return {}
     except Exception as e:
         print(f'Supabase request error: {e}', flush=True)
@@ -101,9 +101,9 @@ def save_price_history(items: list) -> int:
     if snapshots:
         _request(
             'POST',
-            'price_history?on_conflict=product_id,scraped_at_hour',
+            'price_history',
             body=snapshots,
-            extra_headers={'Prefer': 'resolution=ignore-duplicates,return=minimal'},
+            extra_headers={'Prefer': 'return=minimal'},
         )
 
     print(f'Supabase: saved {len(snapshots)} price snapshots', flush=True)

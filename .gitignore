@@ -43,3 +43,7 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local scripts with credentials
+run_scraper.bat
+last_scrape.json

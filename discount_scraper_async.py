@@ -752,28 +752,44 @@ class AsyncDiscountScraper:
                     url = f"{self.jbhifi_url}/{category_path}"
                     tasks.append(('jbhifi', category_name, 'Unisex', self.fetch_page(session, url, self.jbhifi_url)))
 
-            if 'davidjones' in stores:
-                for category_name, category_path in self.davidjones_categories.items():
-                    if not self._category_matches(category_name, category_groups):
-                        continue
-                    url = f"{self.davidjones_url}/{category_path}"
-                    tasks.append(('davidjones', category_name, 'Men', self.fetch_page_playwright(url)))
-
-            # Execute all requests in parallel
-            logger.info(f"Fetching {len(tasks)} pages from {len(stores)} stores in parallel...")
-
-            # Gather all results
+            # Execute non-DJ requests in parallel
+            logger.info(f"Fetching {len(tasks)} pages from non-DJ stores in parallel...")
             task_results = await asyncio.gather(*[t[3] for t in tasks], return_exceptions=True)
-
             fetch_time = (datetime.now() - start_time).total_seconds()
-            logger.info(f"All pages fetched in {fetch_time:.2f}s")
+            logger.info(f"Non-DJ pages fetched in {fetch_time:.2f}s")
+
+            # David Jones: sequential Playwright (3 concurrent max to avoid timeouts)
+            dj_tasks = []
+            if 'davidjones' in stores:
+                dj_urls = [
+                    (category_name, f"{self.davidjones_url}/{category_path}")
+                    for category_name, category_path in self.davidjones_categories.items()
+                    if self._category_matches(category_name, category_groups)
+                ]
+                logger.info(f"Fetching {len(dj_urls)} David Jones pages (3 at a time)...")
+                sem = asyncio.Semaphore(3)
+
+                async def fetch_dj(cat, url):
+                    async with sem:
+                        return await self.fetch_page_playwright(url)
+
+                dj_results = await asyncio.gather(
+                    *[fetch_dj(cat, url) for cat, url in dj_urls],
+                    return_exceptions=True
+                )
+                for (category_name, _), html in zip(dj_urls, dj_results):
+                    dj_tasks.append(('davidjones', category_name, 'Men', html))
 
             # Track counts per store
             store_counts = {}
 
-            # Process results
-            for i, (store, category_name, gender, _) in enumerate(tasks):
-                html = task_results[i]
+            # Process results — non-DJ stores then DJ
+            all_tasks_results = list(zip(tasks, task_results)) + [
+                ((store, cat, gender, None), html)
+                for (store, cat, gender, html) in dj_tasks
+            ]
+
+            for (store, category_name, gender, _), html in all_tasks_results:
                 if isinstance(html, Exception):
                     logger.error(f"Error fetching {store}/{category_name}: {html}")
                     continue
