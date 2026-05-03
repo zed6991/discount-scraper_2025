@@ -85,6 +85,10 @@ class handler(BaseHTTPRequestHandler):
 
             cached_data, cache_age = get_cached_data(cache_key)
 
+            api_dir = os.path.dirname(os.path.abspath(__file__))
+            if api_dir not in sys.path:
+                sys.path.insert(0, api_dir)
+
             if cached_data:
                 print(f'Serving cached data ({cache_age:.0f}s old)', flush=True)
                 response = {
